@@ -1,5 +1,6 @@
 # misc
 .env
+timestamp
 *.log
 
 # Byte-compiled / optimized / DLL files

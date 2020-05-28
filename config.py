@@ -1,5 +1,8 @@
 from skabenclient.config import DeviceConfig
 
+# это словарь, в котором содержится минимальный конфиг, с которым может стартовать девайс
+# сомнительное решение, надо бы это переписать потом.
+
 ESSENTIAL = {
     'test': 'device',
     'data': {'some': 'data'}
