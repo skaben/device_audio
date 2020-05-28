@@ -28,7 +28,7 @@ if __name__ == "__main__":
     app_config = SystemConfig(sys_config_path, root=root)
     app_config.logger(file_path=log_path)
     # inject arguments into system configuration
-    dev_config = BoilerplateDevice(dev_config_path)
+    dev_config = BoilerplateConfig(dev_config_path)
     # instantiating device
     device = BoilerplateDevice(app_config, dev_config)
     # start application

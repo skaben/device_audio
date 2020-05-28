@@ -4,11 +4,10 @@ from skabenclient.config import DeviceConfig
 # сомнительное решение, надо бы это переписать потом.
 
 ESSENTIAL = {
-    'test': 'device',
-    'data': {'some': 'data'}
+        'minimal': 'boilerplate'        
 }
 
-class TesterConfig(DeviceConfig):
+class BoilerplateConfig(DeviceConfig):
 
     def __init__(self, config):
         self.minimal_essential_conf = ESSENTIAL

@@ -1,6 +1,7 @@
 import os
 import time
 
+from skabenclient.device import BaseDevice
 from config import BoilerplateConfig
 
 
