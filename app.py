@@ -21,7 +21,7 @@ log_path = os.path.join(root, 'local.log')
 
 if __name__ == "__main__":
     #
-    # DO NOT FORGET TO RUN ./deploy.sh install BEFORE FIRST START
+    # DO NOT FORGET TO RUN ./pre-run.sh install BEFORE FIRST START
     #
 
     # setting system configuration and logger

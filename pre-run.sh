@@ -5,7 +5,7 @@ trap "exit" INT
 
 help () 
 {
-  echo "Usage: deploy.sh [install|reset]"
+  echo "Usage: pre-run.sh [install|reset]"
   exit
 }
 
@@ -75,7 +75,7 @@ deploy () {
 
 reset () 
 {
-  echo -e "[>] resetting __ TEST __ device configuration"
+  echo -e "[>] resetting __ BOILERPLATE __ device configuration"
   iface=$(ip route | grep "default" | sed -nr 's/.*dev ([^\ ]+).*/\1/p')
   local_path=$(pwd)
   sed -e "s/\${iface}/'$iface'/" \
