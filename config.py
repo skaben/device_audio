@@ -4,10 +4,10 @@ from skabenclient.config import DeviceConfig
 # сомнительное решение, надо бы это переписать потом.
 
 ESSENTIAL = {
-        'minimal': 'boilerplate'        
+        'sndFiles': {'odin':'1.wav'}
 }
 
-class BoilerplateConfig(DeviceConfig):
+class SoundConfig(DeviceConfig):
 
     def __init__(self, config):
         self.minimal_essential_conf = ESSENTIAL

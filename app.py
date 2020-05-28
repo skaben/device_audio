@@ -8,8 +8,8 @@ from skabenclient.main import start_app
 
 from dotenv import load_dotenv
 
-from device import BoilerplateDevice
-from config import BoilerplateConfig
+from device import SoundDevice
+from config import SoundConfig
 
 root = os.path.abspath(os.path.dirname(__file__))
 
@@ -28,9 +28,9 @@ if __name__ == "__main__":
     app_config = SystemConfig(sys_config_path, root=root)
     app_config.logger(file_path=log_path)
     # inject arguments into system configuration
-    dev_config = BoilerplateConfig(dev_config_path)
+    dev_config = SoundConfig(dev_config_path)
     # instantiating device
-    device = BoilerplateDevice(app_config, dev_config)
+    device = SoundDevice(app_config, dev_config)
     # start application
     start_app(app_config=app_config,
               device=device)
