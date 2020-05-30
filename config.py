@@ -24,15 +24,15 @@ ESSENTIAL = {
              "remote": "http://localhost/3.wav",
              "loaded": True}
     },
-    'uid':'',
+    'uid': '',
     'play': False,
     'phrase': {
         'content': [
-            {'name':'odin','repeat':1},
-            {'name':'dva','repeat':1},
-            {'name':'tri','repeat':1}
+            {'name':'odin', 'repeat': 1},
+            {'name':'dva', 'repeat': 1},
+            {'name':'tri', 'repeat': 1}
         ],
-        'repeat':1
+        'repeat': 1
     }
 }
 
