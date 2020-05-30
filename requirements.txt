@@ -1,6 +1,7 @@
 --index-url https://pypi.fury.io/zerthmonk/
 --extra-index-url https://pypi.org/simple/
 
+flake8
 pygame>=1.9.4
 pyaml==18.11.0
 python-dotenv
