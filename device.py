@@ -1,4 +1,3 @@
-import logging
 import os
 import time
 import json
@@ -24,22 +23,39 @@ class SoundDevice(BaseDevice):
     def __init__(self, system_config, device_config, **kwargs):
         super().__init__(system_config, device_config)
         self.running = None
-        self.sound_path = system_config.get('sound_path')
-        self.snd = self._snd_init(self.sound_path)
+        # создаем директорию сначала, вообще все константы вначале объявляем
+        # я бы также попросил ее создавать вот тут, это стандарт для терминала и замка
+        self.sound_path = os.path.join(system_config.root, 'resources', 'sound')
         self.phrase = self.config.get('phrase')
         self.play_flag = self.config.get('play')
-        if not os.path.exists(self.sound_path):
-            logging.exception(f'Path for sound files {self.sound_path} not found. Creating...\n')
-            os.makedirs(self.sound_path)
         self.snd_files = self.config.get('sound_files')
+        try:
+            """ 
+               логирование доступно через self.logger
+               советую почитать таки BaseDevice - станет чуть яснее, как с этим жить)
+               по поводу self.logger.exception два замечания:
+               1. на ошибки, которые восстанавливаются самим приложением лучше генерить error или warning
+               2. self.logger.exception имеет смысл использовать после except, а тут его нет.
+               пунктом 1 я возможно сам где-то грешу - если это так, то это неправильно.
+            """
+            if not os.path.exists(self.sound_path):
+                self.logger.error(f'Path for sound files {self.sound_path} not found. Creating...\n')  
+                os.makedirs(self.sound_path)
+        except TypeError as exception_text:
+            # а вот тут вполне себе сработает и трейсбек еще перехватит
+            exc = f'cannot create directory for sound files\n{exception_text}'
+            self.logger.exception(exc)
+            raise Exception(exc)
+        # потом уже логика. если нет созданной директории - лоадер плюнет исключением, т.к. неоткуда лоадить.
+        self.snd = self._snd_init(self.sound_path)
         self.snd_check()
-        for sndf in self.snd_files.keys():
-            if not self.snd_files[sndf]['loaded']:
-                self.snd_files[sndf]['loaded'] = self.snd_get(self.snd_files[sndf]['remote'],
-                                                              self.snd_files[sndf]['file'])
-        # print({'sound_files': self.snd_files})
-        self.state_update({'uid': 'uid'})
-        # self.state_update({'test':'test'})
+        for key, value in self.snd_files.items():
+            # вот тут лучше пользоваться .get мне кажется
+            # и итерироваться можно через items - гораздо короче выходит
+            loaded = value.get('loaded')
+            if not loaded:
+                # тут я бы тоже использовал .get на случай если таких ключей нет
+                loaded = self.snd_get(value.get('remote'), value.get('file'))
 
     def run(self):
         """ Main device run routine
@@ -48,12 +64,20 @@ class SoundDevice(BaseDevice):
         """
         super().run()
         self.running = True
+        # ну вот тут прям просится объект сиквенса нарисовать
+        # как в терминале, собственно, объект окна)
         while self.running:
             if self.play_flag:
                 i = 0
                 if self.phrase['repeat'] < 0:
                     i = -128
                 while i < self.phrase['repeat']:
+                    """
+                        вложенные while - лучше так не делать.
+                        почему: при брейке верхнего while - невозможно выйти из нижних и все виснет намертво.
+                        в этом виде это можно запускать в отдельном процессе и делать ему kill как только self.running = False
+                    """
+                    # и снова, пожалуйста, snake_case - camelCase только в именах классов
                     for sndName in self.phrase['content']:
                         j = 0
                         while j < sndName['repeat']:
@@ -66,24 +90,40 @@ class SoundDevice(BaseDevice):
                         i += 1
                 self.play_flag = False
                 self.state_update({'play': self.play_flag})
+                """
+                скорее что-то такое:
+
+                for i in range(0, self.phrase.get("repeat", 0) + 1):
+                    for sound_name in self.phrase.get("content", []):
+                        for counter in range(0, sound_name.get("repeat", 0) + 1):
+                            sound = (self.snd_files[sound_name["name"]]["file"].split("."))[0]
+                            self.snd.play(sound=sound, channel="fg")
+                            while self.snd.channels["fg"].get_busy():
+                                time.sleep(0.1)
+                                if not self.running:
+                                    raise SystemExit('exiting')
+                """
 
     def snd_check(self):
-        for snd in self.snd_files.keys():
-            snd_full_name = os.path.join(self.sound_path,self.snd_files[snd]['file'])
-            self.snd_files[snd]['loaded'] = os.path.isfile(snd_full_name)
+        # то же самое - итерирумся через items
+        for key, val in self.snd_files.items():
+            # и ставим пробелы между аргументами
+            snd_full_name = os.path.join(self.sound_path, val['file'])
+            val['loaded'] = os.path.isfile(snd_full_name)
 
-
-    def snd_get(self,snd_url,snd_file):
+    def snd_get(self, snd_url, snd_file):
         try:
-            urllib.request.urlretrieve(snd_url, os.path.join(self.sound_path,snd_file))
-        except:
+            urllib.request.urlretrieve(snd_url, os.path.join(self.sound_path, snd_file))  # и тут тоже)
+        # пустые эксепшны лучше не оставлять. линтеры на это ругаются
+        except Exception as e:
+            self.logger.error(f'cannot retrieve {snd_url}:\n{e}')
             return (False)
         return (True)
 
     def _snd_init(self, sound_dir):
         try:
             snd = SoundLoader(sound_dir=sound_dir)
-        except:
-            logging.exception('failed to initialize sound module')
+        except Exception as e:
+            self.logger.exception(f'failed to initialize sound module:\n{e}')
             snd = None
         return snd
