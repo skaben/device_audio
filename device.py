@@ -1,8 +1,8 @@
 import os
 import time
-import json
+from itertools import cycle
 import urllib.request
-import threading as th
+
 
 from skabenclient.device import BaseDevice
 from skabenclient.loaders import SoundLoader
@@ -27,19 +27,18 @@ class SoundDevice(BaseDevice):
         # я бы также попросил ее создавать вот тут, это стандарт для терминала и замка
         self.sound_path = os.path.join(system_config.root, 'resources', 'sound')
         self.phrase = self.config.get('phrase')
-        self.play_flag = self.config.get('play')
         self.snd_files = self.config.get('sound_files')
         try:
             """ 
                логирование доступно через self.logger
                советую почитать таки BaseDevice - станет чуть яснее, как с этим жить)
                по поводу self.logger.exception два замечания:
-               1. на ошибки, которые восстанавливаются самим приложением лучше генерить error или warning
+               
                2. self.logger.exception имеет смысл использовать после except, а тут его нет.
                пунктом 1 я возможно сам где-то грешу - если это так, то это неправильно.
             """
             if not os.path.exists(self.sound_path):
-                self.logger.error(f'Path for sound files {self.sound_path} not found. Creating...\n')  
+                self.logger.warning(f'Path for sound files {self.sound_path} not found. Creating...\n')
                 os.makedirs(self.sound_path)
         except TypeError as exception_text:
             # а вот тут вполне себе сработает и трейсбек еще перехватит
@@ -67,42 +66,45 @@ class SoundDevice(BaseDevice):
         # ну вот тут прям просится объект сиквенса нарисовать
         # как в терминале, собственно, объект окна)
         while self.running:
-            if self.play_flag:
-                i = 0
-                if self.phrase['repeat'] < 0:
-                    i = -128
-                while i < self.phrase['repeat']:
+            phrase = self.config.get('phrase')
+            phrase_new = phrase
+            change_flag = False
+            play_flag = self.config.get('play')
+            if play_flag:
+                if(phrase['repeat']>0):
+                    range_iter = range(0,phrase['repeat'])
+                else:
+                    range_iter = cycle(range(0,len(phrase['content'])))
+                for i in range_iter:
+                    # print(i)
                     """
                         вложенные while - лучше так не делать.
                         почему: при брейке верхнего while - невозможно выйти из нижних и все виснет намертво.
                         в этом виде это можно запускать в отдельном процессе и делать ему kill как только self.running = False
                     """
                     # и снова, пожалуйста, snake_case - camelCase только в именах классов
-                    for sndName in self.phrase['content']:
-                        j = 0
-                        while j < sndName['repeat']:
-                            snd_p = (self.snd_files[sndName['name']]['file'].split('.'))[0]
+                    for snd_name in phrase['content']:
+                        for j in range(0,snd_name['repeat']):
+                            snd_p = (self.snd_files[snd_name['name']]['file'].split('.'))[0]
                             self.snd.play(sound=snd_p, channel='fg')
                             while self.snd.channels['fg'].get_busy():
-                                time.sleep(0.1)
-                            j = j + 1
-                    if self.phrase['repeat'] > 0:
-                        i += 1
-                self.play_flag = False
-                self.state_update({'play': self.play_flag})
-                """
-                скорее что-то такое:
-
-                for i in range(0, self.phrase.get("repeat", 0) + 1):
-                    for sound_name in self.phrase.get("content", []):
-                        for counter in range(0, sound_name.get("repeat", 0) + 1):
-                            sound = (self.snd_files[sound_name["name"]]["file"].split("."))[0]
-                            self.snd.play(sound=sound, channel="fg")
-                            while self.snd.channels["fg"].get_busy():
-                                time.sleep(0.1)
-                                if not self.running:
-                                    raise SystemExit('exiting')
-                """
+                                phrase_new = self.config.get('phrase')
+                                play_flag = self.config.get('play')
+                                if (phrase_new != phrase or not play_flag):
+                                    change_flag = True
+                                    break
+                            if (change_flag):
+                                break
+                        if (change_flag):
+                            break
+                    if (change_flag):
+                        break
+                if (change_flag):
+                    phrase = phrase_new
+                else:
+                    play_flag = False
+                self.state_update({'play': play_flag})
+                time.sleep(0.2)
 
     def snd_check(self):
         # то же самое - итерирумся через items
