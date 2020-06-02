@@ -1,5 +1,6 @@
 import os
 import time
+import json
 from itertools import cycle
 import urllib.request
 
@@ -48,13 +49,7 @@ class SoundDevice(BaseDevice):
         # потом уже логика. если нет созданной директории - лоадер плюнет исключением, т.к. неоткуда лоадить.
         self.snd = self._snd_init(self.sound_path)
         self.snd_check()
-        for key, value in self.snd_files.items():
-            # вот тут лучше пользоваться .get мне кажется
-            # и итерироваться можно через items - гораздо короче выходит
-            loaded = value.get('loaded')
-            if not loaded:
-                # тут я бы тоже использовал .get на случай если таких ключей нет
-                loaded = self.snd_get(value.get('remote'), value.get('file'))
+        self.snd_base_get()
 
     def run(self):
         """ Main device run routine
@@ -63,8 +58,6 @@ class SoundDevice(BaseDevice):
         """
         super().run()
         self.running = True
-        # ну вот тут прям просится объект сиквенса нарисовать
-        # как в терминале, собственно, объект окна)
         while self.running:
             phrase = self.config.get('phrase')
             phrase_new = phrase
@@ -76,13 +69,6 @@ class SoundDevice(BaseDevice):
                 else:
                     range_iter = cycle(range(0,len(phrase['content'])))
                 for i in range_iter:
-                    # print(i)
-                    """
-                        вложенные while - лучше так не делать.
-                        почему: при брейке верхнего while - невозможно выйти из нижних и все виснет намертво.
-                        в этом виде это можно запускать в отдельном процессе и делать ему kill как только self.running = False
-                    """
-                    # и снова, пожалуйста, snake_case - camelCase только в именах классов
                     for snd_name in phrase['content']:
                         for j in range(0,snd_name['repeat']):
                             snd_p = (self.snd_files[snd_name['name']]['file'].split('.'))[0]
@@ -107,16 +93,13 @@ class SoundDevice(BaseDevice):
                 time.sleep(0.2)
 
     def snd_check(self):
-        # то же самое - итерирумся через items
         for key, val in self.snd_files.items():
-            # и ставим пробелы между аргументами
             snd_full_name = os.path.join(self.sound_path, val['file'])
             val['loaded'] = os.path.isfile(snd_full_name)
 
     def snd_get(self, snd_url, snd_file):
         try:
-            urllib.request.urlretrieve(snd_url, os.path.join(self.sound_path, snd_file))  # и тут тоже)
-        # пустые эксепшны лучше не оставлять. линтеры на это ругаются
+            urllib.request.urlretrieve(snd_url, os.path.join(self.sound_path, snd_file))
         except Exception as e:
             self.logger.error(f'cannot retrieve {snd_url}:\n{e}')
             return (False)
@@ -129,3 +112,16 @@ class SoundDevice(BaseDevice):
             self.logger.exception(f'failed to initialize sound module:\n{e}')
             snd = None
         return snd
+
+    def snd_base_get(self):
+        snd_files_tmp = self.snd_files.copy()
+        for key, value in snd_files_tmp.items():
+            loaded = value.get('loaded')
+            if not loaded:
+                self.snd_files[key]['loaded'] = self.snd_get(value.get('remote'), value.get('file'))
+        self.state_update({'sound_files':self.snd_files})
+
+
+#    def snd_phrase_check(self):
+#        snd_phrase_tmp = self.snd_files.copy()
+
