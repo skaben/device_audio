@@ -11,6 +11,11 @@ from skabenclient.helpers import make_event
 from config import SoundConfig
 
 
+class RaiseFlag(Exception):
+    """Base class for raising flag."""
+    pass
+
+
 class SoundDevice(BaseDevice):
 
     """ Test device should be able to generate all kind of messages
@@ -54,28 +59,27 @@ class SoundDevice(BaseDevice):
             change_flag = False
             play_flag = self.config.get('play')
             if play_flag:
-                if(phrase['repeat']>0):
-                    range_iter = range(0,phrase['repeat'])
+                if phrase['repeat'] > 0:
+                    range_iter = range(0, phrase['repeat'])
                 else:
-                    range_iter = cycle(range(0,len(phrase['content'])))
+                    range_iter = cycle(range(0, len(phrase['content'])))
                 try:
                     for i in range_iter:
                         for snd_name in phrase['content']:
-                            for j in range(0,snd_name['repeat']):
+                            for j in range(0, snd_name['repeat']):
                                 snd_p = (self.snd_files[snd_name['name']]['file'].split('.'))[0]
                                 self.snd.play(sound=snd_p, channel='fg')
                                 while self.snd.channels['fg'].get_busy():
                                     phrase_new = self.config.get('phrase')
                                     play_flag = self.config.get('play')
-                                    if (phrase_new != phrase or not play_flag):
+                                    if phrase_new != phrase or not play_flag:
                                         change_flag = True
-                                        raise Exception('change play data')
-                except:
-                    pass
-                if (change_flag):
+                                        raise RaiseFlag('change flag')
+                except RaiseFlag:
                     phrase = phrase_new
                 else:
                     play_flag = False
+                    
                 self.state_update({'play': play_flag})
                 time.sleep(0.2)
 
@@ -83,7 +87,7 @@ class SoundDevice(BaseDevice):
         try:
             snd = SoundLoader(sound_dir=sound_dir)
         except Exception as e:
-            self.logger.exception(f'failed to initialize sound module:\n{e}')
+            self.logger.exception(f'failed to initialize sound module')
             snd = None
         return snd
 
@@ -93,26 +97,26 @@ class SoundDevice(BaseDevice):
             snd_files_tmp[key] = val.copy()
             snd_full_name = os.path.join(self.sound_path, val['file'])
             snd_files_tmp[key]['loaded'] = os.path.isfile(snd_full_name)
-        self.state_update({'sound_files': snd_files_tmp})
+        self.config.save({'sound_files': snd_files_tmp})
 
     def snd_get(self, snd_url, snd_file):
         try:
-            print(snd_url)
-            urllib.request.urlretrieve(snd_url, os.path.join(self.sound_path, snd_file))
+            self.logger.debug(f"... retrieving {snd_url}")
+            urllib.request.urlretrieve(snd_url, 
+                                       os.path.join(self.sound_path, snd_file))
         except Exception as e:
-            self.logger.error(f'cannot retrieve {snd_url}:\n{e}')
-            return (False)
-        return (True)
+            self.logger.exception(f'cannot retrieve {snd_url}')
 
     def snd_base_get(self):
         snd_files_tmp = {}
         for key, val in self.snd_files.items():
             snd_files_tmp[key] = val.copy()
             if not snd_files_tmp[key]['loaded']:
-                snd_files_tmp[key]['loaded'] = self.snd_get(val.get('remote'), val.get('file'))
+                snd_files_tmp[key]['loaded'] = self.snd_get(val.get('remote'), 
+                                                            val.get('file'))
                 if not snd_files_tmp[key]['loaded']:
                     del(snd_files_tmp[key])
-        self.state_update({'sound_files': snd_files_tmp})
+        self.config.save({'sound_files': snd_files_tmp})
 
 #    def snd_phrase_check(self):
 #        snd_phrase_tmp = self.snd_files.copy()
