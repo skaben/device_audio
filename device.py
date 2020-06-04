@@ -37,12 +37,13 @@ class SoundDevice(BaseDevice):
                 self.logger.warning(f'Path for sound files {self.sound_path} not found. Creating...\n')
                 os.makedirs(self.sound_path)
         except TypeError as exception_text:
+            # а вот тут вполне себе сработает и трейсбек еще перехватит
             exc = f'cannot create directory for sound files\n{exception_text}'
             self.logger.exception(exc)
             raise Exception(exc)
-        self.snd = self._snd_init(self.sound_path)
         self.snd_check()
         self.snd_base_get()
+        self.snd = self._snd_init(self.sound_path)
 
     def run(self):
         """ Main device run routine
@@ -52,6 +53,7 @@ class SoundDevice(BaseDevice):
         super().run()
         self.running = True
         while self.running:
+            self.snd_base_get()
             phrase = self.config.get('phrase')
             phrase_new = phrase
             change_flag = False
@@ -70,49 +72,51 @@ class SoundDevice(BaseDevice):
                                 while self.snd.channels['fg'].get_busy():
                                     phrase_new = self.config.get('phrase')
                                     play_flag = self.config.get('play')
-                                    if (phrase_new != phrase or not play_flag):
+                                    if phrase_new != phrase or not play_flag:
                                         change_flag = True
                                         raise RaiseFlag('change flag')
                 except RaiseFlag:
-                    pass
-                
-                if change_flag:
                     phrase = phrase_new
                 else:
                     play_flag = False
+                    
                 self.state_update({'play': play_flag})
                 time.sleep(0.2)
 
-    def snd_check(self):
-        for key, val in self.snd_files.items():
-            snd_full_name = os.path.join(self.sound_path, val['file'])
-            val['loaded'] = os.path.isfile(snd_full_name)
-            
     def _snd_init(self, sound_dir):
         try:
             snd = SoundLoader(sound_dir=sound_dir)
         except Exception as e:
-            self.logger.exception(f'failed to initialize sound module:\n{e}')
+            self.logger.exception(f'failed to initialize sound module')
             snd = None
         return snd
-        
+
+    def snd_check(self):
+        snd_files_tmp = {}
+        for key, val in self.snd_files.items():
+            snd_files_tmp[key] = val.copy()
+            snd_full_name = os.path.join(self.sound_path, val['file'])
+            snd_files_tmp[key]['loaded'] = os.path.isfile(snd_full_name)
+        self.config.save({'sound_files': snd_files_tmp})
+
     def snd_get(self, snd_url, snd_file):
         try:
-            target = os.path.join(self.sound_path, snd_file)
-            urllib.request.urlretrieve(snd_url, target)
-            return True
+            self.logger.debug(f"... retrieving {snd_url}")
+            urllib.request.urlretrieve(snd_url, 
+                                       os.path.join(self.sound_path, snd_file))
         except Exception as e:
-            self.logger.error(f'cannot retrieve {snd_url}:\n{e}')
+            self.logger.exception(f'cannot retrieve {snd_url}')
 
     def snd_base_get(self):
-        snd_files_tmp = self.snd_files.copy()
-        for key, value in snd_files_tmp.items():
-            loaded = value.get('loaded')
-            if not loaded:
-                self.snd_files[key]['loaded'] = self.snd_get(value.get('remote'), 
-                                                             value.get('file'))
-        self.state_update({'sound_files':self.snd_files})
-
+        snd_files_tmp = {}
+        for key, val in self.snd_files.items():
+            snd_files_tmp[key] = val.copy()
+            if not snd_files_tmp[key]['loaded']:
+                snd_files_tmp[key]['loaded'] = self.snd_get(val.get('remote'), 
+                                                            val.get('file'))
+                if not snd_files_tmp[key]['loaded']:
+                    del(snd_files_tmp[key])
+        self.config.save({'sound_files': snd_files_tmp})
 
 #    def snd_phrase_check(self):
 #        snd_phrase_tmp = self.snd_files.copy()
