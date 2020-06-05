@@ -35,9 +35,7 @@ class SoundDevice(BaseDevice):
         self.in_progress = {}
         try:
             if not os.path.exists(self.sound_path):
-                self.logger.warning(f'Path for sound files '
-                                    f'{self.sound_path}'
-                                    f' not found. Creating...\n')
+                self.logger.warning(f'Path for sound files {self.sound_path} not found. Creating...\n')
                 os.makedirs(self.sound_path)
         except TypeError as exception_text:
             # а вот тут вполне себе сработает и трейсбек еще перехватит
@@ -70,19 +68,15 @@ class SoundDevice(BaseDevice):
                     for i in range_iter:
                         for snd_name in phrase['content']:
                             for j in range(0, snd_name['repeat']):
-                                snd_p = \
-                                    (self.snd_files[snd_name['name']]
-                                     ['file'].split('.'))[0]
+                                snd_p = (self.snd_files[snd_name['name']]['file'].split('.'))[0]
                                 self.snd.play(sound=snd_p, channel='fg')
                                 while self.snd.channels['fg'].get_busy():
                                     self.snd_phrase_check()
                                     phrase_new = self.config.get('phrase')
                                     self.play_flag = self.config.get('play')
-                                    if phrase_new != phrase or \
-                                            not self.play_flag:
+                                    if phrase_new != phrase or not self.play_flag:
                                         self.change_flag = True
                                         raise RaiseFlag('change flag')
-                    print(f'Iteraction number {i}')
                 except RaiseFlag:
                     phrase = self.config.get('phrase')
                 else:
@@ -124,8 +118,7 @@ class SoundDevice(BaseDevice):
         for key, val in self.snd_files.items():
             snd_files_tmp[key] = val.copy()
             if not snd_files_tmp[key]['loaded']:
-                snd_files_tmp[key]['loaded'] = self.snd_get(val.get('remote'),
-                                                            val.get('file'))
+                snd_files_tmp[key]['loaded'] = self.snd_get(val.get('remote'), val.get('file'))
                 if not snd_files_tmp[key]['loaded']:
                     del (snd_files_tmp[key])
         self.state_update({'sound_files': snd_files_tmp})
