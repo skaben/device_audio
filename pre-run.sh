@@ -47,7 +47,8 @@ deploy () {
     PYTHON="python$PYVER"
   fi
 
-  
+  echo -e "unpacking resources"
+  tar -xvzf resources.tar.gz
 
   echo -e "> installing dependencies with apt"
   sudo apt-get install -y --no-install-recommends $PYTHON $PYTHON_VENV $PYDEV
