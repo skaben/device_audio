@@ -75,7 +75,7 @@ deploy () {
 
 reset () 
 {
-  echo -e "[>] resetting __ BOILERPLATE __ device configuration"
+  echo -e "[>] resetting __ AUDIO __ device configuration"
   iface=$(ip route | grep "default" | sed -nr 's/.*dev ([^\ ]+).*/\1/p')
   local_path=$(pwd)
   sed -e "s/\${iface}/'$iface'/" \
