@@ -1,0 +1,30 @@
+phrase:
+  content:
+  - name: odin
+    repeat: 1
+  - name: dva
+    repeat: 2
+  - name: tri
+    repeat: 3
+  repeat: 1
+play: false
+sound_files:
+  dva:
+    current: false
+    file: 2.ogg
+    loaded: true
+    remote: url://
+    repeat: '-1'
+  odin:
+    current: false
+    file: 1.ogg
+    loaded: true
+    remote: url://
+    repeat: '2'
+  tri:
+    current: false
+    file: 3.ogg
+    loaded: true
+    remote: http://localhost/3.ogg
+    repeat: '1'
+uid: 000c290c07cf

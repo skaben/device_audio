@@ -1,3 +1,9 @@
 # SKABEN TESTER config
 
-iface: ${iface}
+dev_type: 'snd'
+broker_ip: '127.0.0.1'
+iface: 'ens33'
+topic: 'snd'
+sound_dir: '${dirpath}/resources/sound'
+username: 'mqtt'
+password: 'skabent0mqtt'
