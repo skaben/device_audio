@@ -1,5 +1,7 @@
-# SKABEN TESTER config
+# SKABEN AUDIO config
 
+standalone: false
+debug: true
 dev_type: 'snd'
 broker_ip: '127.0.0.1'
 iface: 'ens33'

@@ -1,8 +1,5 @@
-from skabenclient.config import DeviceConfig
+from skabenclient.config import DeviceConfigExtended
 
-# это словарь, в котором содержится минимальный конфиг, с которым может стартовать девайс
-# сомнительное решение, надо бы это переписать потом.
-#
 
 ESSENTIAL = {
     'sound_files': {
@@ -20,7 +17,8 @@ ESSENTIAL = {
     'play': False
 }
 
-class SoundConfig(DeviceConfig):
+
+class SoundConfig(DeviceConfigExtended):
 
     def __init__(self, config):
         self.minimal_essential_conf = ESSENTIAL
