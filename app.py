@@ -26,9 +26,9 @@ if __name__ == "__main__":
 
     # setting system configuration and logger
     app_config = SystemConfig(sys_config_path, root=root)
-    app_config.logger(file_path=log_path)
     # inject arguments into system configuration
     dev_config = SoundConfig(dev_config_path)
+    dev_config.make_asset_paths()
     # instantiating device
     device = SoundDevice(app_config, dev_config)
     # start application

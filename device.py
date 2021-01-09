@@ -3,7 +3,6 @@ import time
 from itertools import cycle
 import requests
 
-
 from skabenclient.device import BaseDevice
 from skabenclient.loaders import SoundLoader
 from config import SoundConfig
